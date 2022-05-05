@@ -1,0 +1,297 @@
+---
+title: "Practico 3"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Ejercicio 2
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8) 
+```
+
+```{r, echo=F,results="hide",message=F,warning=F}
+library(tidyverse)
+library("readxl")
+setwd("C:/Users/marti/Desktop/Proyecto de Análisis de Datos I/P3")
+datos<-read_excel("proporciones_reducida.xlsx")
+datos$barrio <- as.factor(datos$barrio)
+```
+
+
+## A) Aplicar al menos un método jerárquico, por ejemplo: vecino mas cercano, vecino mas lejano, vinculación promedio o Ward.
+
+### i) Describir muy brevemente en qué consiste.
+
+ El análisis de conglomerados (clusters) es un metodo que tiene por objeto agrupar elementos homogéneos en función de las similitudes o similaridades entre ellos teniendo en cuenta un conjunto de variables especificas. Normalmente se agrupan las observaciones, pero el análisis de conglomerados puede también aplicarse a las variables. Permite clasificar las observaciones en grupos que son homogeneos internamente y heterogeneos entre ellos.
+ 
+ El metodo jerarquico tiene por objetivo estructurar los elementos de un conjunto ordenados en funcion de su similitud. Esto implica que los datos se ordenan en niveles, de manera que los superiores contienen a los inferiores. Estrictamente, estos métodos no definen grupos, sino la estructura de asociación en cadena que pueda existir entre los elementos, sin embargo, la jerarquía construida permite obtener una partición de los datos en grupos.
+ 
+ Los métodos jerárquicos parten de una matriz de distancias o similaridades entre los elementos de la muestra y construyen una jerarquía basada en una distancia.
+ 
+  Para estos datos se ajustaron clusters empleando los metodos de vecino mas cercano, vecino mas lejano y vinculacion promedio. Hay que evaluar hasta qué punto la estructura del dendrograma creado refleja las distancias originales entre observaciones. Una forma de hacerlo es empleando el coeficiente de correlación entre las distancias copheneticas del dendrograma (altura de los nodos) y la matriz de distancias original. Cuanto más cercano es el valor a 1, mejor refleja el dendrograma la verdadera similitud entre las observaciones. Valores superiores a 0.75 suelen considerarse como buenos. Esta medida puede emplearse como criterio de ayuda para escoger entre los distintos métodos de linkage. En R, la función cophenetic() calcula las distancias copheneticas de un hierarchical clustering.
+
+Para estos datos, el método de linkage average o vinculacion promedio consigue representar ligeramente mejor la similitud entre las observaciones, el coeficiente de correlacion para este metodo es de 0,81 superando el de vecino mas cercano (0,79) y el de vecino mas lejano (0,75).
+  
+  Este metodo obtiene la distancia entre dos grupos calculando la distancia promedio entre todos los pares de observaciones que pueden formarse tomando un miembro de un grupo y otro miembro del otro grupo. Asi, va formando los grupos y calculando sucesivamente la matriz de distancias hasta que todas las observaciones quedan en un solo grupo. A continuacion se grafica el dendrograma obtenido:
+ 
+### ii) Graficar el dendograma.
+
+```{r, echo=F,results="hide",message=F,warning=F}
+mat_dist <- dist(x = datos, method = "euclidean")
+hc_euclidea_single <- hclust(d = mat_dist , method = "single")
+hc_euclidea_complete <- hclust(d = mat_dist, method = "complete")
+hc_euclidea_average  <- hclust(d = mat_dist, method = "average")
+
+a=cor(x = mat_dist, cophenetic(hc_euclidea_single))
+b=cor(x = mat_dist, cophenetic(hc_euclidea_complete))
+c=cor(x = mat_dist, cophenetic(hc_euclidea_average))
+
+X.clust.sin<-as.dendrogram(hclust(d = mat_dist, method = "average"), method = "average")
+plot(X.clust.sin)
+```
+
+  En el eje horizontal del dendrograma tenemos cada uno de los datos que componen el conjunto de entrada, mientras que en el eje vertical se representa la distancia euclídea que existe entre cada grupo a medida que éstos se van jerarquizando. Cada línea vertical del diagrama representa un agrupamiento que coincide con los puntos arropados por ésta, y como se ve en el dendrograma, estos van formándose progresivamente hasta tener un solo gran grupo determinado por la línea horizontal superior. Así, al ir descendiendo en la jerarquía, vemos que de un solo grupo pasamos a 2, luego a 3, luego a 6, y así sucesivamente. 
+
+### iii) Determinar cuántos grupos se seleccionan. Justificar, por ejemplo usando el Criterio de Hartigan o el Coeficiente de Correlación Cofenético.
+
+  Para determinar el numero de clusters, se opto por considerar la diferencia entre la Suma de Cuadrados Dentro con g y g+1 grupos, analizando la reduccion de la variabilidad relativa tras un agrupamiento adicional. Nos guiamos por el criterio de Hartigan, quien sugiere introducir un grupo mas si F > 10.
+  
+```{r, echo=F,results="hide",message=F,warning=F} 
+HClust.1  <- hclust(d = mat_dist, method = "average")
+Datos=datos
+
+#Resumen de los 2 grupos
+summary(as.factor(cutree(HClust.1, k = 2)))# Cluster Sizes
+
+## Generar una variable grupo(con dos grupos)  h2
+Datos$h2 <- c(as.factor(cutree(HClust.1, k = 2)))
+
+# suma de cuadrados dentro de 2 grupos
+G1=as.matrix(subset(Datos[,2:41],Datos$h2==1))
+G2=as.matrix(subset(Datos[,2:41],Datos$h2==2))
+
+SCD1= sum(diag(var(G1))*(nrow(G1)-1))
+SCD2= sum(diag(var(G2))*(nrow(G2)-1))
+SCDG2=SCD1+SCD2;SCDG2
+
+#Resumen de los 3 grupos
+#Generar las variable de los grupos 3 (h3) y 4 (h4) variables
+summary(as.factor(cutree(HClust.1, k = 3)))# Cluster Sizes
+
+## Generar una variable grupo(con tres grupos)  h3
+Datos$h3 <- c(as.factor(cutree(HClust.1, k = 3)))
+
+# suma de cuadrados dentro de 3 grupos
+G1=as.matrix(subset(Datos[,2:41],Datos$h3==1))
+G2=as.matrix(subset(Datos[,2:41],Datos$h3==2))
+G3=as.matrix(subset(Datos[,2:41],Datos$h3==3))
+
+SCD1= sum(diag(var(G1))*(nrow(G1)-1))
+SCD2= sum(diag(var(G2))*(nrow(G2)-1))
+SCD3= sum(diag(var(G3))*(nrow(G3)-1))
+SCD1;SCD2;SCD3
+SCDG3=SCD1+SCD2+SCD3; SCDG3
+
+
+#Resumen de los 4 grupos
+summary(as.factor(cutree(HClust.1, k = 4)))# Cluster Sizes
+
+## Generar una variable grupo(con 4 grupos)  h4
+Datos$h4 <- c(as.factor(cutree(HClust.1, k = 4)))
+
+# suma de cuadrados dentre de 4 grupos
+G1=as.matrix(subset(Datos[,2:41],Datos$h4==1))
+G2=as.matrix(subset(Datos[,2:41],Datos$h4==2))
+G3=as.matrix(subset(Datos[,2:41],Datos$h4==3))
+G4=as.matrix(subset(Datos[,2:41],Datos$h4==4))
+
+SCD1= sum(diag(var(G1))*(nrow(G1)-1))
+SCD2= sum(diag(var(G2))*(nrow(G2)-1))
+SCD3= sum(diag(var(G3))*(nrow(G3)-1))
+SCD4= sum(diag(var(G4))*(nrow(G4)-1))
+SCD1;SCD2;SCD3;SCD4
+SCDG4=SCD1+SCD2+SCD3+SCD4; SCDG4
+
+## Generar una variable grupo(con 5 grupos)  h5
+Datos$h5 <- c(as.factor(cutree(HClust.1, k = 5)))
+
+# suma de cuadrados dentre de 4 grupos
+G1=as.matrix(subset(Datos[,2:41],Datos$h5==1))
+G2=as.matrix(subset(Datos[,2:41],Datos$h5==2))
+G3=as.matrix(subset(Datos[,2:41],Datos$h5==3))
+G4=as.matrix(subset(Datos[,2:41],Datos$h5==4))
+G5=as.matrix(subset(Datos[,2:41],Datos$h5==5))
+
+SCD1= sum(diag(var(G1))*(nrow(G1)-1))
+SCD2= sum(diag(var(G2))*(nrow(G2)-1))
+SCD3= sum(diag(var(G3))*(nrow(G3)-1))
+SCD4= sum(diag(var(G4))*(nrow(G4)-1))
+SCD5= sum(diag(var(G5))*(nrow(G5)-1))
+SCD1;SCD2;SCD3;SCD4;SCD5
+SCDG5=SCD1+SCD2+SCD3+SCD4+SCD5; SCDG5
+
+
+## Generar una variable grupo(con 6 grupos)  h5
+Datos$h6 <- c(as.factor(cutree(HClust.1, k = 6)))
+
+# suma de cuadrados dentre de 4 grupos
+G1=as.matrix(subset(Datos[,2:41],Datos$h6==1))
+G2=as.matrix(subset(Datos[,2:41],Datos$h6==2))
+G3=as.matrix(subset(Datos[,2:41],Datos$h6==3))
+G4=as.matrix(subset(Datos[,2:41],Datos$h6==4))
+G5=as.matrix(subset(Datos[,2:41],Datos$h6==5))
+G6=as.matrix(subset(Datos[,2:41],Datos$h6==6))
+
+SCD1= sum(diag(var(G1))*(nrow(G1)-1))
+SCD2= sum(diag(var(G2))*(nrow(G2)-1))
+SCD3= sum(diag(var(G3))*(nrow(G3)-1))
+SCD4= sum(diag(var(G4))*(nrow(G4)-1))
+SCD5= sum(diag(var(G5))*(nrow(G5)-1))
+SCD6= sum(diag(var(G6))*(nrow(G6)-1))
+
+SCD1;SCD2;SCD3;SCD4;SCD5;SCD6
+SCDG6=SCD1+SCD2+SCD3+SCD4+SCD5+SCD6; SCDG6
+
+
+#PARA COMPARAR SUMAS DE CUADRADOS
+
+#calculamos el valor F =(SCDT(k grupos)-SCDT (k+1 grupos))/(SCDT(k+1 grupos)/n-k-1)
+# de 2 a 3 grupos
+F=(SCDG2-SCDG3)/(SCDG3/(63-2-1))
+F
+
+# de 3 a 4 grupos
+F=(SCDG3-SCDG4)/(SCDG4/(63-3-1))
+F
+
+# de 4 a 5 grupos
+F=(SCDG4-SCDG5)/(SCDG5/(63-4-1))
+F
+
+# de 5 a 6 grupos
+F=(SCDG5-SCDG6)/(SCDG6/(63-5-1))
+F
+```
+  Aplicando el criterio de Hartigan nos quedamos con 6 grupos. La siguiente imagen muestra el corte a la altura de 0,48, con lo que se obtienen los 6 clusters.
+  
+```{r, echo=F,results="hide",message=F,warning=F}
+library(factoextra)
+set.seed(101)
+hc_euclidea_av <- hclust(d = mat_dist,
+                               method = "average")
+
+fviz_dend(x = hc_euclidea_av, k = 6, cex = 0.6) +
+  geom_hline(yintercept =  0.48, linetype = "dashed") +
+  labs(title = "Herarchical clustering",
+       subtitle = "Distancia euclídea, Lincage average, K=6")
+```
+
+
+## B) Aplicar el método k-means
+  
+  Para aplicar el metodo de k means, procedemos a determinar el numero optimo de clusters, esto se llevo a cabo a por medio del metodo del codo y de silhouette.
+  
+```{r, echo=F,results="hide",message=F,warning=F}
+
+# Determining Optimal clusters (k) Using Elbow method
+fviz_nbclust(x = datos[,-1],FUNcluster = kmeans, method = 'wss' )
+```
+
+
+```{r, echo=F,results="hide",message=F,warning=F}
+
+# Determining Optimal clusters (k) Using Average Silhouette Method
+fviz_nbclust(x = datos[,-1],FUNcluster = kmeans, method = 'silhouette' )
+```
+
+  A partir de los graficos decidimos optar por un k de 3 para este metodo. Aplicando el metodo para el k obtenido los resultados son:
+  
+
+```{r, echo=F,results="hide",message=F,warning=F}
+#tres GRUPOS
+.cluster<-kmeans(datos[,-1],
+                 centers=3,iter.max=10,nstart=1)
+fviz_cluster(.cluster, data = datos[,-1])
+```
+
+### i) Indicar cómo se puede atemperar la influencia de la elección de los centroides iniciales en los resultados.
+
+  Para atemperar la influencia de la eleccion de los centroides iniciales en los resultados, se puede optar por el algoritmo de K medias recortado. 
+
+
+### ii) Determinar si se encontró una estructura de agrupación fuerte o débil; por ejemplo, empleando el Coeficiente de Silhouette.
+
+El coeficiente de silhouette para un k igual a 3 (optimo), arrojo un valor de 0.39, lo cual indica una estructura debil y podria ser artificial.
+
+## C) En base a alguno de los agrupamientos previos, realizar un análisis descriptivo comparativo entre grupos.
+
+  La comparacion se realiza a partir del metodo de k means.
+
+### i) En base al mismo, caracterice a los grupos.
+
+```{r, echo=F,message=F,warning=F}
+.cluster
+```
+ A partir de esta salida podemos ver la media para los proporciones de cada una de las variables en cada uno de los grupos y de esta forma ver cuales son las variables que mas influyen para separar a los grupos.
+ 
+ Por otra parte tambien se puede apreciar el ratio de la suma de cuadrados entre-clusters y la suma de cuadrados totales. Este ratio es equivalente al R2 de los modelos de regresión e indica el porcentaje de varianza explicada por el modelo respecto al total de varianza observada. Puede utilizarse para evaluar el clustering obtenido pero, al igual que ocurre con R2 al incrementar el número de predictores, el ratio between_SS / total_SS aumenta con el número de clusters creados. Esto último se debe de tener en cuenta para evitar problemas de overfitting. En este caso el porcentaja de la varianza explicada por el modelo respecto al total de la varianza observada es de 67,8%.
+ 
+##### Interpretacion de las proporciones medias para los distintos grupos:
+
+Respecto al nivel educativo podemos ver el grupo 1 posee mayor proporcion de personas con primario completo y secundario incompleto, por lo que seria una buena indicadora de las personas que han alcanzado este nivel educativo.  Por otra parte el grupo 3 posee una mayor proporcion de personas en los grupos que se encuentran relacionados a la universidad completa e incompleta, obteniendo un porcentaje mayoritario en universidad incompleta, por lo que seria un grupo representado por personas que han alcanzado formarse en una carrera de grado. El grupo 2 posee una proporcion mayoritaria en los grupos que han alcanzado la universidad al igual que el grupo 3, pero con valores menores.
+
+Para la variable que refleja si las personas saben leer o no saben leer, podemos ver que ninguno de los grupos permite una buena division de estas categorias y los valores en todos los grupos son homogeneos.
+
+En la cobertura de salud podemos ver que el grupo 1 no permite realizar una buena division para esta variable, mientras que los grupos 2 y 3 poseen grandes porcentajes de personas con cobertura.
+
+En todos los grupos el porcentaje de ocupados, desocupados e inactivos es muy similar.
+
+Para las necesidades basicas el unico grupo que se caracteriza por concentrar los nb1 es el grupo 1, las demas categorias tienen valores similares. Recordemos que esta categoria no suma 1 porque la mayor proporcion de las personas posee sus necesidades basicas satisfechas.
+
+En todos los grupos la privacion del material en el hogar es similar y encuentra mayores proporciones en sin privacion, se destaca una concentracion de personas privpat en el grupo 1 y con privrec en el grupo 2.
+
+El grupo 1 y 2 poseen la mayor proporcion de personas que viven en casas, mientras que el grupo 3 relfeja las personas que viven en departamentos.
+
+La cantidad de habitantes en los hogares es similar para todos los grupos, sin embargo, se destaca en el grupo 3 que la mayor proporcion la obtienen las personas que viven solas y en pareja, mientras que para los grupos 1 y 2 todos los valores son muy similares.
+
+ 
+### ii) ¿Se le pueden dar “nombres” intuitivos a los grupos?
+
+Grupo 1: Concentra personas que estuvieron por comenzar el secundario o bien que se encuentran en un proceso de aprendizaje secundario o que nunca pudieron terminarlo y que viven en casas. 
+
+Grupo 2: Concentra personas que han alcanzado la formacion de grado (universitaria), ya sea si la han temrinado o no, que viven en casas y que poseen cobertura de salud. 
+
+Grupo 3: Concentra personas que han alcanzado la formacion de grado (universitaria), ya sea si la han terminado o no, que viven  solos o en pareja en departamentos y que poseen cobertura medica.
+
+De esta forma se podria dar nombres intuitivos a los grupos focalizandonos en la educacion y en la descripcion previamente realizada:
+
+Grupo 1: ciudadanos cordobeces con trabajos de oficio. Asumo que son cordobeses como consecuencia de que residen en casas, dado a que se encuentran inmersos en no mas que la educacion secundaria asumo que la casa fue heredada o bien siempre vivieron alli por lo que son nacidos en la provincia y que realizan trabajos de oficio como consecuencia de no poseer educacion universitaria. Algo que fortalece mi hipotesis es la cobertura de salud, a partir de la cual podemos observar que la mitad de las personas de este grupo no se encuentran cubiertas, lo que se justificaria en el caso de trabajos informales o en negro y ademas son el unico grupo con una proporcion mayoritaria de necesidades basicas nbi1 insatisfechas, lo que refleja su situacion eceonomica.
+
+Grupo 2: ciudadanos adultos con trabajos profesionales. Asumo que son ciudadanos adultos dado a que han podido adquirir una casa, la cual justifico por medio de que la persona ha podido trabajar un tiempo prologando gracias a que posee un titulo de grado que le permitio ahorrar para acceder a su hogar propio y se encuentra en proceso de formar una familia (como consecuencia de que la menor proporcion de habitantes en el hogar es la de uno solo en comparacion con dos, tres y cuatro).
+
+Grupo 3: ciudadanos jovenes con trabajos profesionales. Asumo que es un ciudadano joven como consecuencia de que habita un departamento, este puede ser de cordoba o no, como consecuencia de que esta es una provincia conocida por recibir muchos estudiantes que vienen de otras provincias a formarse universitariamente y al finalizar sus estudios normalmente se quedan residiendo en la provincia. Por lo general estos jovenes viven en departamentos y dado a la posibilidad que tubieron de estudio univesitario asumo que poseen un trabajo de tipo profesional.
+
+
+## D) Indicar si se encuentra alguna conexión entre los resultados obtenidos en los incisos anteriores y los obtenidos en el Problema 2 de la guía II.
+
+  Encuentro una notable relacion con los resultados de la guia 2, en esta guia el mejor analisis de componentes pricipales resumia el 80% de la variabilidad de los datos con 3 factores y en estos tres factores la variables de mayor relevancia era en cada caso:
+  * Componente 1: nivel educativo.
+  * Componente 2: tipo de hogar y cantidad de habitantes.
+  * Componente 3: necesidades basicas insatisfechas.
+  A partir de esto podemos ver que las variables de mayor relevancia en el analisis de componentes principales son las variables que mayor importancia tienen a la hora de formar clusters.  
+  
+### i) Opcional: realizar un análisis factorial exploratorio breve usando esta base reducida para que sean más comparables los resultados.
+
+```{r, echo=F,message=F,warning=F}
+library(psych)
+indices <- c(1,12,14,16,19,28,33,41)
+datos2 <- datos[,-indices]
+.FA <- factanal(datos2,factors=2, rotation="none", scores="Bartlett", data=datos2);.FA
+```
+
+  Podemos ver que para este analisis factorial con 2 factores, se cumple practicamente lo mismo que habiamos establecido para el analisis de componentes principales, vemos que para los dos factores que resumen un total del 68,4% de la variabilidad total de los datos las variables mas importantes son: nivel educativo, hogar y cantidad de personas, que son las mismas que permiten realizar la division de los clusters. 
+
+
+

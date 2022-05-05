@@ -1,0 +1,315 @@
+---
+title: "Guia 2 - Problema 2"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Cargado y preparacion de la base de datos 
+```{r}
+library(tidyverse)
+datos<-read.csv2("proporciones.csv")
+for (i in 2:ncol(datos)){
+  datos[,i]<- as.numeric(datos[,i])
+}
+datos$barrio <- as.factor(datos$barrio)
+```
+
+# a) Realizar un análisis descriptivo univariado breve de las variables empleando medidas de resumen y gráficos.
+
+## Principales medidas de resumen
+```{r}
+summary(datos[,2:7])
+```
+* Sucede que al ser tantas variables resulta dificultuoso el analisis individual de cada una a traves de medidas de resumen caracterizticas, por lo que se procedio con un analisis grafico para cada una de las variables en el set de datos.
+
+## Analisis grafico de las variables.
+
+### Proporcion de los jefes o jefas de hogar segun nivel educativo
+```{r}
+slices <- apply(datos[,c(2:12)], 2, mean)
+lbls <- names(datos[,c(2:12)])
+pie(slices, labels = lbls, main="Proporcion de los jefes o jefas de hogar segun nivel educativo")
+data.frame(datos[,c(2:12)] %>% summarise(across(everything(), list(mean))))
+```
+
+* Podemos ver que las categorias de secinc, primcomp, seccomp concentran los mayores porcentajes del diagrama de torta. A partir de estos datos se concluye que el 21% de los jefes de hogares ha finalizado el primario, el 18% posee el secundario incompleto y el 16% posee el secundario completo. 
+
+### Proporción de las personas de 3 años o más, según si saben leer y escribir
+```{r}
+slices <- apply(datos[,c(13:14)], 2, mean)
+lbls <- names(datos[,c(13:14)])
+pie(slices, labels = lbls, main="Proporción de las personas de 3 años o más, según si saben leer y escribir")
+data.frame(datos[,c(13:14)] %>% summarise(across(everything(), list(mean))))
+
+```
+
+* El 97% de los jefes de hogares sabe leer y el 3% no sabe leer.
+
+### Proporción de personas según cobertura de salud
+```{r}
+slices <- apply(datos[,c(15:16)], 2, mean)
+lbls <- names(datos[,c(15:16)])
+pie(slices, labels = lbls, main="Proporción de personas según cobertura de salud")
+data.frame(datos[,c(15:16)] %>% summarise(across(everything(), list(mean))))
+
+```
+ 
+* El 68% de los jefes de hogares posee cobertura de salud, mientras qeu el 32% no posee cobertura de salud.
+
+### Proporción de personas de 14 años o más según condición de ocupación
+```{r}
+slices <- apply(datos[,c(17:19)], 2, mean)
+lbls <- names(datos[,c(17:19)])
+pie(slices, labels = lbls, main="Proporción de personas de 14 años o más según condición de ocupación")
+data.frame(datos[,c(17:19)] %>% summarise(across(everything(), list(mean))))
+
+```
+
+* El 60% de los jefes de hogares poseen una ocupacion, el 36% se encuentra inactivo y el 4% restante se encuentran desocupados.
+
+### Proporción de personas por tipo de necesidades básicas insatisfechas
+```{r}
+slices <- apply(datos[,c(20:24)], 2, mean)
+lbls <- names(datos[,c(20:24)])
+pie(slices, labels = lbls, main="Proporción de personas por tipo de necesidades básicas insatisfechas")
+data.frame(datos[,c(20:24)] %>% summarise(across(everything(), list(mean))))
+```
+
+* Observando estos datos podemos ver que el mayor porcentaje del diagrama de torta se lo lleva nbi1 con un 8%. Al realizar la suma total de las categorias involucradas, obtenemos un total del 10% de personas con necesidades basicas insatisfechas. Por lo que concluimos que el 90% restante que no figura es el que posee todas sus necesidades basicas satisfechas. 
+
+
+### Proporción de personas según índice de privación material en el hogar
+```{r}
+slices <- apply(datos[,c(25:28)], 2, mean)
+lbls <- names(datos[,c(25:28)])
+pie(slices, labels = lbls, main="Proporción de personas según índice de privación material en el hogar")
+data.frame(datos[,c(25:28)] %>% summarise(across(everything(), list(mean))))
+```
+
+* Podemos ver que el 86% de los jefes de hogares no posee privaciones materiales en el hogar, mientras que el 14% restante posee una privacion de algun tipo.
+
+### Proporción de hogares por tipo
+```{r}
+slices <- apply(datos[,c(29:33)], 2, mean)
+lbls <- names(datos[,c(29:33)])
+pie(slices, labels = lbls, main="Proporción de hogares por tipo")
+data.frame(datos[,c(29:33)] %>% summarise(across(everything(), list(mean))))
+```
+
+* El 87% de los jefes de hogares vive en una casa, el 10% en departamentos y el 3% restante en algun otro tipo de formato de vivienda.
+
+### Proporción de hogares con determinada cantidad de habitantes
+```{r}
+slices <- apply(datos[,c(34:41)], 2, mean)
+lbls <- names(datos[,c(34:41)])
+pie(slices, labels = lbls, main="Proporción de hogares con determinada cantidad de habitantes")
+data.frame(datos[,c(34:41)] %>% summarise(across(everything(), list(mean))))
+```
+
+* Dos, tres y cuatro habitantes abarcan un total del 60% del diagrama con un 20% de aporte aproximadamente cada uno, seguido por un solo habitante con un 13% en cada uno de los hogares. Las categorias restantes son menos comunes. 
+
+# b) Realizar un análisis descriptivo multivariado.
+
+## 1) ¿Hay outliers multivariantes?
+
+* Cabe destacar que tube problemas con la base de datos como consecuencia de que la matriz S (de varianzas y covarianzas) resultaba no singular y por lo tanto no podia invertir (calculo necesario para poder realizar los items posteriores). Por lo que se opto por eliminar las variables redundantes para permitir que la matriz de varianzas y covarianzas sea no singular y por lo tanto inversible. Con variables redundantes nos referimos a aquellas que no brindan informacion nueva, como por ejemplo la ultima categoria de cada una de las variables, informacion que se encuentra brindada de forma indirecta por todas las demas, en estos casos se concideran variables dicotomicas  o bien variables cuya suma sea igual a la unidad.
+* Por otra parte tambien se implementaron librerias especificas de R para realizar los calculos planteados y para ello se implemento la base de datos completa.
+
+```{r, message=FALSE,warning=FALSE}
+# Elimino variables redundantes (ultima categoria de cada una de las variables exepto para necesidades basicas insatisfechas cuya suma total no es igual a la unidad):
+indices <- c(1,12,14,16,19,28,33,41)
+datos2 <- datos[,-indices]
+n=nrow(datos2)
+p=ncol(datos2)
+
+#Distancias de mahalanobis
+media=apply(datos2,2,mean);media[1:10]
+S=cov(datos2);S[1:5,1:5]
+mh=sqrt(mahalanobis(datos2,media,S));mh[1:10]
+```
+
+```{r, message=FALSE,warning=FALSE}
+#Para detectar valores atípicos
+mh=mahalanobis(datos2,media,S)
+p=round(pchisq(c(mh), df=4, lower.tail=FALSE),4)
+#t(cbind(mh,p))
+qchisq(c(0.05), df=ncol(datos2), lower.tail=FALSE)
+plot(mh, xlab="mh")+
+abline(h=qchisq(c(0.05), df=4, lower.tail=FALSE), col= "red")
+
+#Listado de outliers:
+indic <- which(mh >= qchisq(c(0.05), df=ncol(datos2), lower.tail=FALSE))
+outliers <- datos[indic,]; outliers[1:5,1:5]
+nrow(outliers)
+```
+* Los valores que se encuentran por encima de la linea roja son outliers, en total y a traves de este procedimiento podemos determinar que hay un total de 90 outliers en nuestra base de datos. Para analizarlo de forma mas detallada, consultamos librerias especificas de R. 
+
+### Procedimiento con libreria
+```{r}
+library(MVN)
+results <- mvn(data = datos[,-1], multivariateOutlierMethod = "quan", showOutliers = TRUE)
+```
+
+* El grafico sugiere la existencia de 48 outliers. A continuacion se incluye la lista de los mismos. 
+
+```{r}
+results$multivariateOutliers
+```
+
+* La determinacion de si un dato es outlier o no se realiza a partir del calculo de la distancia de mahalanobis, la cual elimina el problema de la diversidad de unidades de medida y tiene en cuenta la estructura de correlacion de los datos. 
+
+## 2) ¿La distribución de los datos es normal multivariante?
+
+```{r, message=FALSE, warning=FALSE}
+library(fBasics)
+#Asimetria
+#dia=array(0,dim=c(n,n))
+#S1=solve(S)
+#for (i in 1:n){ 
+# for (j in 1:n)   
+#   dia[i,j]=(as.matrix(datos2[i,]-media))%*%S1%*%t(as.matrix(datos2[j,]-media))
+#}
+#dia1=dia**3
+#Ap=sum(dia1)/(n*n);Ap
+```
+* El coeficiente de asimetria se encuentra muy por encima del 0, valor necesario para cumplir la normalidad multivariada. Por lo tanto no cumple la asimetria para una distribucion normal multivariada.
+
+* Tube que comentarlo como consecuencia del gran costo computacional que tenia, demora mucho el pasaje del Rmarkdown a html, pero el resultado se encuentra lejos de una asimetria multivariada. Lo dejo comentado por si requiere ver el procedimiento realizado.
+
+```{r, message=FALSE, warning=FALSE}
+#Curtosis
+Kp=sum(mh**2)/n;Kp
+ncol(datos2)*(ncol(datos2)+2)
+```
+* El coeficiente de kurtosis se encuentra lejos de 1088, por lo que no cumple con el criterio de kurtosis para una normal multivariada. 
+
+* Como conclucion al no cumplir ni la asimetria ni la kurtosis para una normal multivariada, se concluye que los datos no proviene de una poblacion con esta distribucion.
+
+### Forma de resolver con libreria:
+```{r}
+Mardia <- mvn(data = datos[,-1] ,mvnTest ="mardia",univariateTest = "SW")
+Mardia$multivariateNormality
+```
+
+* Test de mardia de asimetria generalizada plantea como hipotesis nula que la muestra probiene de una distribucion normal.
+* (n/6)* Ap ~ X^2
+* La muestra reune evidencias suficientes para rechazar la hipotesis nula a un nivel de singificancia del 5%. 
+
+* Test de mardia de kurtosis plantea como hipotesis nula que la muestra probiene de una distribucion normal.
+* Kp ~ N(p*(p+2), 8/n*p*(p+2))
+* La muestra reune evidencias suficientes para rechazar la hipotesis nula a un nivel de singificancia del 5%. 
+
+* Rechazamos normalidad multivariada. 
+
+### Excluyo outliers y veo si cumple:
+
+#### Outliers analisis 1 (procedimiento de calculo con distancia de mahalanobis):
+```{r}
+datos_clean1 <- datos2[ -indic,] 
+
+Mardia <- mvn(data = datos_clean1 ,mvnTest ="mardia",univariateTest = "SW")
+Mardia$multivariateNormality
+
+```
+
+* Sacando los outliers tampooco se cumple la normalidad multivariada.
+
+#### Outliers analisis 2 (procedimiento de calculo con librerias):
+```{r}
+datos_clean <- datos[ -as.numeric(results$multivariateOutliers$Observation), -1] 
+
+Mardia <- mvn(data = datos_clean ,mvnTest ="mardia",univariateTest = "SW")
+Mardia$multivariateNormality
+
+```
+
+* Sacando los outliers tampooco se cumple la normalidad multivariada.
+
+# c) Obtener los componentes principales.
+```{r}
+pc <- prcomp(datos[,-1])
+pc$rotation[,1]
+```
+### 2) Indique qué variables son las más importantes en la determinación del primer componente principal.
+
+* Las variables mas importantes en la primera componente son cobertura 0.5226944861, nocobertura - 0.5226944861, primcomp  0.2759875164, sinpriv -0.2527631845 y univcomp -0.2437448673.
+
+### 1) ¿Cuántos componentes principales bastan para retener suficiente información sobre los datos? Fundamente con alguno de los criterios estudiados.
+
+```{r}
+summary(pc)
+```
+
+* Podriamos quedarnos con 3 componentes principales ya que explican el 78,54% de la variabilidad de la base de datos y a partir de esta componente los aumentos de variabilidad explicada son pequeños.
+
+# d) Efectuar un análisis factorial exploratorio.
+
+## Analisis factorial exploratorio
+
+### Pido seis factores, sin rotacion calculados con el metodo de ejes principales:
+```{r}
+library(psych)
+mod1 <- fa(datos[,-1], nfactors=6,rotate="none",fm= "pa")
+
+mod1
+
+biplot.psych(fa(datos[,-1],nfactors = 2,fm="pa",rotate = "none"),main = paste("Biplot sin rotación "),col=c(2,3,4),pch = c(21,18))
+```
+
+* Con 3 factores explica el 81% de la variabilidad de la base de datos.
+
+## 1) Probar diversas rotaciones. + 3) Graficar.
+
+### Rotacion varimax:
+```{r}
+library(GPArotation)
+
+mod2 <- fa(datos[,-1], nfactors=6,rotate="varimax",fm= "pa")
+
+mod2
+
+biplot.psych(fa(datos[,-1],nfactors = 2,fm="pa",rotate = "varimax"),main = paste("Biplot con rotación varimax"),col=c(2,3,4),pch = c(21,18))
+
+```
+* Con 4 factores explica el 80% de la variabilidad de la base de datos.
+
+### Rotacion promax
+```{r}
+mod2 <- fa(datos[,-1], nfactors=6,rotate="Promax",fm= "pa")
+
+mod2
+
+biplot.psych(fa(datos[,-1],nfactors = 2,fm="pa",rotate = "Promax"),main = paste("Biplot con rotación Promax"),col=c(2,3,4),pch = c(21,18))
+```
+* Con 4 factores explica el 80% de la variabilidad de los datos.
+
+#### Rotacion quartimax:
+```{r}
+mod2 <- fa(datos[,-1], nfactors=6,rotate="quartimax",fm= "pa")
+
+mod2
+
+biplot.psych(fa(datos[,-1],nfactors = 2,fm="pa",rotate = "quartimax"),main = paste("Biplot con rotación quartimax"),col=c(2,3,4),pch = c(21,18))
+
+```
+
+* Con 4 factores explica el 80% de la variabilidad de los datos.
+
+* Concluimos que el mejor analisis factorial lo provee el analisis sin rotacion debido a que con 3 factores logra resumir el 80% de la variabilidad de los datos, mismo nivel de variabilidad que las demas rotaciones logran resumir con 4 factores.
+
+#### 2) Intentar encontrar “nombres” intuitivos para los factores.
+
+```{r}
+mod1[["loadings"]]
+```
+* PA1 = cobert.salud_nivel.educativo
+* PA2 = condic.ocup_cant.hab.
+* PA3 = nec.inst._hogar.
+* PA4 = leer_cant.hab.
+
+* La seleccion de los nombres intuitivos se hiso en funcion de el nombre de la variable que incluia las categorias que mayores "loadings" recibia para cada una de las componentes.
